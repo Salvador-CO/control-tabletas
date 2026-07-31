@@ -1,6 +1,6 @@
 ﻿# 📱 Control de Tabletas — Colegio de Bachilleres
 
-Sistema web para el **control, asignación y seguimiento de dispositivos tecnológicos** (tabletas, celulares, laptops) del Colegio de Bachilleres del Estado de Chiapas.
+Sistema web para el **control, asignación y seguimiento de dispositivos tecnológicos** (tabletas, celulares, laptops) del Colegio de Bachilleres.
 
 ---
 
@@ -34,7 +34,7 @@ Antes del sistema, el control de tabletas se llevaba en un **archivo Excel manua
 - 📋 **Inventario** de todos los dispositivos con número de serie, marca, modelo y estado
 - 👥 **Gestión de personal** (coordinadores por sede)
 - 🏫 **Gestión de sedes/planteles**
-- 📅 **Registro de Exacers** (periodos de evaluación cada 3 meses)
+- 📅 **Registro de EXACER** (periodos de evaluación cada 3 meses)
 - 📄 **Generación de Vales de Resguardo** en PDF con líneas de firma
 - ✅ **Liberación rápida** con palomita verde cuando regresan las tabletas
 - 📊 **Dashboard** con estadísticas en tiempo real
@@ -363,8 +363,7 @@ php artisan config:clear && php artisan cache:clear
 
 ## 👤 Autor
 
-**Salvador** — Colegio de Bachilleres del Estado de Chiapas
-Subdirección Académica
+**Salvador** — Colegio de Bachilleres DASE 2026
 
 ---
 

@@ -13,6 +13,7 @@ class AssignmentItem extends Model
         'assignment_id',
         'device_id',
         'staff_id',
+        'role_in_period',
         'has_case_strap',
         'is_returned',
         'returned_at',

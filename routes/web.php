@@ -4,32 +4,41 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\AssignmentController;
+use App\Http\Controllers\PermanentAssignmentController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\EventController;
 
-// Dashboard
+// ── Dashboard ────────────────────────────────────────────────────
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-// Inventory Routes
+// ── Inventory ────────────────────────────────────────────────────
 Route::resource('devices', DeviceController::class)->only(['index', 'store', 'update']);
 
-// Staff / Personal
-Route::resource('staff', StaffController::class)->only(['index', 'store', 'update', 'destroy']);
-
-// Locations / Sedes
+// ── Catalogs ─────────────────────────────────────────────────────
+Route::resource('staff',     StaffController::class)->only(['index', 'store', 'update', 'destroy']);
 Route::resource('locations', LocationController::class)->only(['index', 'store', 'update', 'destroy']);
+Route::resource('events',    EventController::class)->only(['index', 'store', 'update', 'destroy']);
 
-// Events / Exacers
-Route::resource('events', EventController::class)->only(['index', 'store', 'update', 'destroy']);
-
-// Assignments and Resguardo Routes
+// ── Exacer Assignments (Vales) ────────────────────────────────────
 Route::resource('assignments', AssignmentController::class)->only(['index', 'create', 'store', 'show']);
 
-// API: Palomita Liberation Checklist
+// Liberation (palomita)
 Route::post('assignments/items/{item}/toggle-liberation', [AssignmentController::class, 'toggleLiberation'])
-    ->name('assignments.items.toggle-liberation');
+     ->name('assignments.items.toggle-liberation');
 
-// Printable PDF Route
+// PDF vale de resguardo (Exacer)
 Route::get('assignments/{assignment}/pdf', [AssignmentController::class, 'downloadPdf'])
-    ->name('assignments.pdf');
+     ->name('assignments.pdf');
+
+// ── Permanent Assignments (Jefes) ─────────────────────────────────
+Route::resource('permanent', PermanentAssignmentController::class)
+     ->only(['index', 'create', 'store', 'show']);
+
+// Liberar dispositivo de asignación permanente
+Route::post('permanent/{permanent}/release', [PermanentAssignmentController::class, 'release'])
+     ->name('permanent.release');
+
+// PDF de asignación permanente
+Route::get('permanent/{permanent}/pdf', [PermanentAssignmentController::class, 'pdf'])
+     ->name('permanent.pdf');

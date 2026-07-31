@@ -15,18 +15,40 @@ class AssignmentController extends Controller
 {
     public function index()
     {
-        $assignments = Assignment::with(['location', 'coordinator', 'items.device', 'items.staff'])->latest()->get();
+        $assignments = Assignment::with(['location', 'coordinator', 'items.device', 'items.staff'])
+                                 ->latest()
+                                 ->get();
         return view('assignments.index', compact('assignments'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $events           = Event::all();
-        $locations        = Location::all();
-        $staff            = Staff::all();
-        $availableDevices = Device::available()->with('category')->get();
+        $events           = Event::orderBy('start_date', 'desc')->get();
+        $locations        = Location::orderBy('name')->get();
+        $staff            = Staff::orderBy('full_name')->get();
+        $availableDevices = Device::available()->with('category')->orderBy('brand')->get();
 
-        return view('assignments.create', compact('events', 'locations', 'staff', 'availableDevices'));
+        // ── Datos del periodo anterior para preselección ──────
+        $previousItems = collect();
+        $previousLocationId = $request->location_id ?? null;
+
+        if ($previousLocationId) {
+            $previousAssignment = Assignment::where('location_id', $previousLocationId)
+                ->with(['items.device', 'items.staff'])
+                ->latest()
+                ->first();
+
+            if ($previousAssignment) {
+                // Solo incluimos los items cuyo dispositivo sigue disponible
+                $previousItems = $previousAssignment->items->filter(function ($item) {
+                    return $item->device && $item->device->status === 'disponible';
+                });
+            }
+        }
+
+        return view('assignments.create', compact(
+            'events', 'locations', 'staff', 'availableDevices', 'previousItems', 'previousLocationId'
+        ));
     }
 
     public function store(Request $request)
@@ -41,6 +63,7 @@ class AssignmentController extends Controller
             'devices'            => 'required|array|min:1',
             'devices.*.id'       => 'required|exists:devices,id',
             'devices.*.staff_id' => 'nullable|exists:staff,id',
+            'devices.*.role'     => 'nullable|string|max:200',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -61,6 +84,7 @@ class AssignmentController extends Controller
                     'assignment_id'  => $assignment->id,
                     'device_id'      => $deviceData['id'],
                     'staff_id'       => $deviceData['staff_id'] ?? null,
+                    'role_in_period' => $deviceData['role'] ?? null,   // ← cargo en este periodo
                     'has_case_strap' => true,
                     'is_returned'    => false,
                 ]);
@@ -69,12 +93,13 @@ class AssignmentController extends Controller
             }
         });
 
-        return redirect()->route('assignments.index')->with('success', 'Vale de Resguardo generado correctamente.');
+        return redirect()->route('assignments.index')
+                         ->with('success', 'Vale de Resguardo generado correctamente.');
     }
 
     public function show(Assignment $assignment)
     {
-        $assignment->load(['event', 'location', 'coordinator', 'items.device', 'items.staff']);
+        $assignment->load(['event', 'location', 'coordinator', 'items.device.category', 'items.staff']);
         return view('assignments.show', compact('assignment'));
     }
 
@@ -111,7 +136,6 @@ class AssignmentController extends Controller
             return $pdf->stream("Vale_Resguardo_{$assignment->location->name}.pdf");
         }
 
-        // Fallback: render the view directly for browser printing
         return view('pdf.vale_resguardo', compact('assignment'));
     }
 }

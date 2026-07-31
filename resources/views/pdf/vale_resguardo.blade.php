@@ -132,6 +132,7 @@
                 <th>No. de Serie</th>
                 <th>Cargador</th>
                 <th>Personal Asignado</th>
+                <th>Cargo en este Periodo</th>
                 <th style="text-align:center;">Devuelto ✓</th>
             </tr>
         </thead>
@@ -146,6 +147,7 @@
                 <td><strong>{{ $item->device->serial_number ?? '—' }}</strong></td>
                 <td>{{ $item->device->charger_details ?? 'Sin cargador' }}</td>
                 <td>{{ $item->staff->full_name ?? '—' }}</td>
+                <td>{{ $item->role_in_period ?? '—' }}</td>
                 <td style="text-align:center;">
                     <div class="check-box {{ $item->is_returned ? 'checked' : '' }}">
                         {{ $item->is_returned ? '✓' : '' }}
@@ -154,6 +156,7 @@
             </tr>
             @endforeach
         </tbody>
+
     </table>
 
     <!-- Legal Text -->

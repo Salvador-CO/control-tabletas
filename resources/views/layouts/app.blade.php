@@ -220,12 +220,21 @@
         <a href="{{ route('events.index') }}" class="sidebar-link {{ request()->routeIs('events.*') ? 'active' : '' }}">
             <i class="bi bi-calendar-event-fill"></i> <span>Exacers / Periodos</span>
         </a>
-        <a href="{{ route('assignments.index') }}" class="sidebar-link {{ request()->routeIs('assignments.*') ? 'active' : '' }}">
+        <a href="{{ route('assignments.index') }}" class="sidebar-link {{ request()->routeIs('assignments.index') || request()->routeIs('assignments.show') ? 'active' : '' }}">
             <i class="bi bi-file-earmark-check-fill"></i> <span>Vales de Resguardo</span>
         </a>
         <a href="{{ route('assignments.create') }}" class="sidebar-link {{ request()->routeIs('assignments.create') ? 'active' : '' }}">
-            <i class="bi bi-plus-circle-fill"></i> <span>Nuevo Vale</span>
+            <i class="bi bi-plus-circle-fill"></i> <span>Nuevo Vale Exacer</span>
         </a>
+
+        <div class="nav-label mt-2">Asignaciones Fijas</div>
+        <a href="{{ route('permanent.index') }}" class="sidebar-link {{ request()->routeIs('permanent.index') || request()->routeIs('permanent.show') ? 'active' : '' }}">
+            <i class="bi bi-person-badge-fill"></i> <span>Jefes / Permanentes</span>
+        </a>
+        <a href="{{ route('permanent.create') }}" class="sidebar-link {{ request()->routeIs('permanent.create') ? 'active' : '' }}">
+            <i class="bi bi-person-plus-fill"></i> <span>Nueva Asignación Fija</span>
+        </a>
+
     </div>
 </nav>
 

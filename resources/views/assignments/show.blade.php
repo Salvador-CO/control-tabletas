@@ -88,6 +88,7 @@
                             <th>Dispositivo</th>
                             <th>No. Serie</th>
                             <th>Personal</th>
+                            <th>Cargo en este Periodo</th>
                             <th>Devuelto</th>
                             <th class="text-center">Liberar</th>
                         </tr>
@@ -102,7 +103,14 @@
                             <td>
                                 <code class="bg-light px-2 py-1 rounded small">{{ $item->device->serial_number ?? '—' }}</code>
                             </td>
-                            <td class="small">{{ $item->staff->full_name ?? '<span class="text-muted">—</span>' }}</td>
+                            <td>{{ $item->staff->full_name ?? '—' }}</td>
+                            <td>
+                                @if($item->role_in_period)
+                                    <span class="badge bg-light text-dark fw-normal small">{{ $item->role_in_period }}</span>
+                                @else
+                                    <span class="text-muted small">—</span>
+                                @endif
+                            </td>
                             <td>
                                 @if($item->is_returned && $item->returned_at)
                                     <span class="small text-success">
