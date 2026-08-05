@@ -18,10 +18,14 @@ class EventController extends Controller
         $request->validate([
             'name'       => 'required|string|max:200',
             'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
+            'end_date'   => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        Event::create($request->only('name', 'start_date', 'end_date'));
+        Event::create([
+            'name'       => $request->name,
+            'start_date' => $request->start_date,
+            'end_date'   => $request->end_date ?: null, // null = indefinido
+        ]);
 
         return redirect()->back()->with('success', 'Evento registrado correctamente.');
     }
@@ -31,10 +35,14 @@ class EventController extends Controller
         $request->validate([
             'name'       => 'required|string|max:200',
             'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
+            'end_date'   => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        $event->update($request->only('name', 'start_date', 'end_date'));
+        $event->update([
+            'name'       => $request->name,
+            'start_date' => $request->start_date,
+            'end_date'   => $request->end_date ?: null, // null = indefinido
+        ]);
 
         return redirect()->back()->with('success', 'Evento actualizado correctamente.');
     }

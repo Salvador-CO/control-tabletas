@@ -21,9 +21,22 @@
                         <tbody>
                         @foreach($events as $ev)
                         <tr>
-                            <td class="fw-semibold">{{ $ev->name }}</td>
+                            <td class="fw-semibold">
+                                {{ $ev->name }}
+                                @if(!$ev->end_date)
+                                    <span class="badge ms-1" style="background:#fef3c7;color:#92400e;font-size:.65rem;">
+                                        <i class="bi bi-infinity me-1"></i>Indefinido
+                                    </span>
+                                @endif
+                            </td>
                             <td class="small">{{ $ev->start_date ? \Carbon\Carbon::parse($ev->start_date)->format('d/m/Y') : '—' }}</td>
-                            <td class="small">{{ $ev->end_date ? \Carbon\Carbon::parse($ev->end_date)->format('d/m/Y') : '—' }}</td>
+                            <td class="small">
+                                @if($ev->end_date)
+                                    {{ \Carbon\Carbon::parse($ev->end_date)->format('d/m/Y') }}
+                                @else
+                                    <span class="text-muted fst-italic">Al terminar el evento</span>
+                                @endif
+                            </td>
                             <td><span class="badge bg-light text-dark">{{ $ev->assignments_count }}</span></td>
                             <td>
                                 <button class="btn btn-sm btn-outline-secondary"
@@ -47,6 +60,7 @@
         </div>
     </div>
 
+    {{-- ── Formulario Agregar ── --}}
     <div class="col-12 col-xl-4">
         <div class="stat-card">
             <h6 class="fw-semibold mb-3"><i class="bi bi-plus-circle-fill text-success me-2"></i>Registrar Exacer / Evento</h6>
@@ -62,8 +76,24 @@
                     <input type="date" name="start_date" class="form-control" value="{{ old('start_date') }}" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold text-muted">Fecha de Fin *</label>
-                    <input type="date" name="end_date" class="form-control" value="{{ old('end_date') }}" required>
+                    <label class="form-label small fw-semibold text-muted">Fecha de Fin</label>
+
+                    {{-- Checkbox indefinido --}}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="add_indefinite"
+                               {{ old('end_indefinite') ? 'checked' : '' }}>
+                        <label class="form-check-label small text-muted" for="add_indefinite">
+                            <i class="bi bi-infinity me-1 text-warning"></i>
+                            <strong>Indefinido</strong> — se regresa al terminar el evento
+                        </label>
+                    </div>
+
+                    <input type="date" name="end_date" id="add_end_date" class="form-control"
+                           value="{{ old('end_date') }}"
+                           {{ old('end_indefinite') ? 'disabled' : '' }}>
+                    <div class="form-text text-muted" id="add_end_hint" style="{{ old('end_indefinite') ? '' : 'display:none;' }}">
+                        <i class="bi bi-info-circle me-1"></i>Sin fecha definida — las tabletas se regresan cuando concluya el evento.
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary-custom w-100">
                     <i class="bi bi-save-fill me-2"></i>Guardar
@@ -73,6 +103,7 @@
     </div>
 </div>
 
+{{-- ── Modal Editar ── --}}
 <div class="modal fade" id="editEvModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -89,8 +120,21 @@
                         <input type="date" name="start_date" id="edit_e_start" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Fin</label>
-                        <input type="date" name="end_date" id="edit_e_end" class="form-control" required>
+                        <label class="form-label small fw-semibold text-muted">Fecha de Fin</label>
+
+                        {{-- Checkbox indefinido --}}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="edit_indefinite">
+                            <label class="form-check-label small text-muted" for="edit_indefinite">
+                                <i class="bi bi-infinity me-1 text-warning"></i>
+                                <strong>Indefinido</strong> — se regresa al terminar el evento
+                            </label>
+                        </div>
+
+                        <input type="date" name="end_date" id="edit_e_end" class="form-control">
+                        <div class="form-text text-muted" id="edit_end_hint" style="display:none;">
+                            <i class="bi bi-info-circle me-1"></i>Sin fecha definida — las tabletas se regresan cuando concluya el evento.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -102,14 +146,60 @@
     </div>
 </div>
 @endsection
+
 @push('scripts')
 <script>
+/* ── Formulario Agregar: toggle fecha fin ── */
+const addIndefinite = document.getElementById('add_indefinite');
+const addEndDate    = document.getElementById('add_end_date');
+const addEndHint    = document.getElementById('add_end_hint');
+
+addIndefinite.addEventListener('change', function () {
+    if (this.checked) {
+        addEndDate.value    = '';
+        addEndDate.disabled = true;
+        addEndHint.style.display = '';
+    } else {
+        addEndDate.disabled = false;
+        addEndHint.style.display = 'none';
+    }
+});
+
+/* ── Modal Editar: poblar datos + toggle ── */
+const editIndefinite = document.getElementById('edit_indefinite');
+const editEndDate    = document.getElementById('edit_e_end');
+const editEndHint    = document.getElementById('edit_end_hint');
+
+editIndefinite.addEventListener('change', function () {
+    if (this.checked) {
+        editEndDate.value    = '';
+        editEndDate.disabled = true;
+        editEndHint.style.display = '';
+    } else {
+        editEndDate.disabled = false;
+        editEndHint.style.display = 'none';
+    }
+});
+
 document.getElementById('editEvModal').addEventListener('show.bs.modal', function(e) {
     const btn = e.relatedTarget;
     document.getElementById('editEvForm').action = '/events/' + btn.dataset.id;
     document.getElementById('edit_e_name').value  = btn.dataset.name  || '';
     document.getElementById('edit_e_start').value = btn.dataset.start || '';
-    document.getElementById('edit_e_end').value   = btn.dataset.end   || '';
+
+    const hasEnd = btn.dataset.end && btn.dataset.end !== 'null' && btn.dataset.end !== '';
+
+    if (hasEnd) {
+        editIndefinite.checked   = false;
+        editEndDate.value        = btn.dataset.end;
+        editEndDate.disabled     = false;
+        editEndHint.style.display = 'none';
+    } else {
+        editIndefinite.checked   = true;
+        editEndDate.value        = '';
+        editEndDate.disabled     = true;
+        editEndHint.style.display = '';
+    }
 });
 </script>
 @endpush

@@ -57,7 +57,7 @@
                         <td class="small text-muted">
                             @if($a->start_date)
                                 {{ $a->start_date->format('d/m/Y') }} —
-                                {{ $a->end_date?->format('d/m/Y') ?? '?' }}
+                                {{ $a->end_date?->format('d/m/Y') ?? '∞ Indefinido' }}
                             @else
                                 —
                             @endif

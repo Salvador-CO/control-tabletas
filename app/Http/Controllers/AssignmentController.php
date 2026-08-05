@@ -59,7 +59,7 @@ class AssignmentController extends Controller
             'coordinator_id'     => 'required|exists:staff,id',
             'chargers_count'     => 'required|integer|min:0',
             'start_date'         => 'required|date',
-            'end_date'           => 'required|date|after_or_equal:start_date',
+            'end_date'           => 'nullable|date|after_or_equal:start_date',
             'devices'            => 'required|array|min:1',
             'devices.*.id'       => 'required|exists:devices,id',
             'devices.*.staff_id' => 'nullable|exists:staff,id',
@@ -100,7 +100,12 @@ class AssignmentController extends Controller
     public function show(Assignment $assignment)
     {
         $assignment->load(['event', 'location', 'coordinator', 'items.device.category', 'items.staff']);
-        return view('assignments.show', compact('assignment'));
+
+        // Para el modal de agregar tabletas
+        $availableDevices = Device::available()->with('category')->orderBy('brand')->get();
+        $staff            = Staff::orderBy('full_name')->get();
+
+        return view('assignments.show', compact('assignment', 'availableDevices', 'staff'));
     }
 
     public function toggleLiberation(AssignmentItem $item)
@@ -127,15 +132,53 @@ class AssignmentController extends Controller
         ]);
     }
 
+    public function addDevices(Request $request, Assignment $assignment)
+    {
+        $request->validate([
+            'devices'            => 'required|array|min:1',
+            'devices.*.id'       => 'required|exists:devices,id',
+            'devices.*.staff_id' => 'nullable|exists:staff,id',
+            'devices.*.role'     => 'nullable|string|max:200',
+        ]);
+
+        // IDs ya en este vale
+        $existingIds = $assignment->items()->pluck('device_id')->toArray();
+
+        DB::transaction(function () use ($request, $assignment, $existingIds) {
+            foreach ($request->devices as $deviceData) {
+                $id = $deviceData['id'];
+                if (in_array($id, $existingIds)) continue; // skip duplicados
+
+                AssignmentItem::create([
+                    'assignment_id'  => $assignment->id,
+                    'device_id'      => $id,
+                    'staff_id'       => $deviceData['staff_id'] ?? null,
+                    'role_in_period' => $deviceData['role']     ?? null,
+                    'has_case_strap' => true,
+                    'is_returned'    => false,
+                ]);
+
+                Device::where('id', $id)->update(['status' => 'en_resguardo']);
+            }
+
+            // Reactivar vale si estaba completado
+            $assignment->update(['status' => 'activo']);
+        });
+
+        return redirect()->route('assignments.show', $assignment)
+                         ->with('success', 'Dispositivos agregados al vale correctamente.');
+    }
+
     public function downloadPdf(Assignment $assignment)
     {
-        $assignment->load(['event', 'location', 'coordinator', 'items.device', 'items.staff']);
+        $assignment->load(['event', 'location', 'coordinator', 'items.device.category', 'items.staff']);
 
         if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.vale_resguardo', compact('assignment'));
-            return $pdf->stream("Vale_Resguardo_{$assignment->location->name}.pdf");
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.vale_exacer', compact('assignment'))
+                                               ->setPaper('letter', 'portrait');
+            return $pdf->stream("Vale_Resguardo_Exacer_{$assignment->id}.pdf");
         }
 
-        return view('pdf.vale_resguardo', compact('assignment'));
+        return view('pdf.vale_exacer', compact('assignment'));
     }
 }

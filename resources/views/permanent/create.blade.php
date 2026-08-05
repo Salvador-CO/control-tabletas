@@ -100,14 +100,33 @@
 
 @push('scripts')
 <script>
-// Prellenar el cargo cuando se selecciona una persona
-document.querySelector('select[name="staff_id"]').addEventListener('change', function() {
-    const selected = this.options[this.selectedIndex];
-    const lastRole = selected.dataset.lastRole || '';
-    const roleInput = document.getElementById('role_input');
-    if (lastRole && !roleInput.value) {
-        roleInput.value = lastRole;
-    }
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Tom Select — Persona
+    const staffTs = new TomSelect('select[name="staff_id"]', {
+        placeholder: 'Buscar persona…',
+        allowEmptyOption: true,
+        sortField: { field: 'text', direction: 'asc' },
+    });
+
+    // Tom Select — Dispositivo
+    new TomSelect('select[name="device_id"]', {
+        placeholder: 'Buscar por serie, modelo…',
+        allowEmptyOption: true,
+        sortField: { field: 'text', direction: 'asc' },
+    });
+
+    // Prellenar cargo cuando se selecciona persona
+    staffTs.on('change', function(value) {
+        const roleInput = document.getElementById('role_input');
+        if (!roleInput.value && value) {
+            const opt = document.querySelector(`select[name="staff_id"] option[value="${value}"]`);
+            if (opt && opt.dataset.lastRole) {
+                roleInput.value = opt.dataset.lastRole;
+            }
+        }
+    });
 });
 </script>
 @endpush
+

@@ -5,13 +5,26 @@
 
 @section('content')
 
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
+
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <a href="{{ route('assignments.index') }}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>Regresar
     </a>
     <div class="d-flex gap-2">
+        @if($assignment->status !== 'cancelado')
+        <button class="btn btn-sm btn-outline-success"
+                data-bs-toggle="modal" data-bs-target="#addDevicesModal">
+            <i class="bi bi-plus-circle-fill me-1"></i>Agregar Tabletas
+        </button>
+        @endif
         <a href="{{ route('assignments.pdf', $assignment) }}" class="btn btn-sm btn-outline-danger" target="_blank">
-            <i class="bi bi-file-pdf-fill me-1"></i>Descargar PDF
+            <i class="bi bi-file-pdf-fill me-1"></i>Descargar / Imprimir PDF
         </a>
     </div>
 </div>
@@ -28,7 +41,7 @@
                 <dt class="text-muted small">Sede</dt>
                 <dd>{{ $assignment->location->name ?? '—' }}</dd>
 
-                <dt class="text-muted small">Coordinador</dt>
+                <dt class="text-muted small">Coordinador / Responsable</dt>
                 <dd>{{ $assignment->coordinator->full_name ?? '—' }}</dd>
 
                 <dt class="text-muted small">Entregó</dt>
@@ -37,7 +50,11 @@
                 <dt class="text-muted small">Periodo</dt>
                 <dd>
                     {{ $assignment->start_date?->format('d/m/Y') ?? '—' }}
-                    @if($assignment->end_date) — {{ $assignment->end_date->format('d/m/Y') }} @endif
+                    @if($assignment->end_date)
+                        — {{ $assignment->end_date->format('d/m/Y') }}
+                    @else
+                        — <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.7rem;"><i class="bi bi-infinity me-1"></i>Indefinido</span>
+                    @endif
                 </dd>
 
                 @if($assignment->event)
@@ -138,16 +155,101 @@
     </div>
 </div>
 
+{{-- ── Modal: Agregar Tabletas ── --}}
+<div class="modal fade" id="addDevicesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-plus-circle-fill text-success me-2"></i>
+                    Agregar Tabletas al Vale VAL-{{ str_pad($assignment->id, 4, '0', STR_PAD_LEFT) }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ route('assignments.add-devices', $assignment) }}" id="addDevicesForm">
+                @csrf
+                <div class="modal-body">
+
+                    @php
+                        $alreadyIds = $assignment->items->pluck('device_id')->toArray();
+                    @endphp
+
+                    @if($availableDevices->isEmpty())
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            No hay dispositivos disponibles para agregar.
+                        </div>
+                    @else
+                        {{-- Buscador --}}
+                        <div class="input-group mb-3">
+                            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="addDeviceSearch" class="form-control" placeholder="Filtrar por serie o modelo…">
+                        </div>
+
+                        <div style="max-height:380px; overflow-y:auto;">
+                            @foreach($availableDevices as $device)
+                            <div class="add-device-item border rounded-3 p-2 mb-2 d-flex align-items-center gap-3"
+                                 data-serial="{{ strtolower($device->serial_number) }}"
+                                 data-model="{{ strtolower($device->model) }}"
+                                 style="cursor:pointer; transition: background .15s;">
+                                <input type="checkbox" class="form-check-input add-device-cb flex-shrink-0"
+                                       style="width:20px;height:20px;"
+                                       name="devices[{{ $device->id }}][id]"
+                                       value="{{ $device->id }}">
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small">
+                                        {{ $device->brand }} {{ $device->model }}
+                                        <span class="text-muted fw-normal ms-1">· {{ $device->serial_number }}</span>
+                                    </div>
+                                    <div class="text-muted" style="font-size:.75rem;">{{ $device->category->name ?? '' }}</div>
+                                </div>
+                                <div class="add-extra-fields row g-1" style="width:310px; display:none!important;">
+                                    <div class="col-6">
+                                        <select name="devices[{{ $device->id }}][staff_id]"
+                                                class="form-select form-select-sm add-staff-sel">
+                                            <option value="">Sin persona</option>
+                                            @foreach($staff as $s)
+                                                <option value="{{ $s->id }}">{{ $s->full_name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="text"
+                                               name="devices[{{ $device->id }}][role]"
+                                               class="form-control form-control-sm"
+                                               placeholder="Cargo en el periodo">
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="small text-muted mt-2">
+                            <span id="addSelectedCount">0</span> dispositivo(s) seleccionado(s)
+                        </div>
+                    @endif
+
+                    <div id="addDevicesError" class="alert alert-danger mt-2 d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary-custom" id="addDevicesSubmit" disabled>
+                        <i class="bi bi-plus-circle-fill me-2"></i>Agregar al Vale
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
 <script>
+/* ── Liberar dispositivos ── */
 document.querySelectorAll('.liberation-btn').forEach(btn => {
     btn.addEventListener('click', function () {
         const itemId = this.dataset.itemId;
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-        // Optimistic UI update
         this.disabled = true;
 
         fetch(`/assignments/items/${itemId}/toggle-liberation`, {
@@ -169,13 +271,69 @@ document.querySelectorAll('.liberation-btn').forEach(btn => {
                     this.classList.remove('returned');
                     row.classList.remove('bg-success', 'bg-opacity-10');
                 }
-                // Reload to update progress bar and timestamps
                 setTimeout(() => location.reload(), 600);
             }
         })
         .catch(() => {
             alert('Error al actualizar. Intente de nuevo.');
             this.disabled = false;
+        });
+    });
+});
+
+/* ── Modal Agregar Tabletas ── */
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput   = document.getElementById('addDeviceSearch');
+    const countSpan     = document.getElementById('addSelectedCount');
+    const submitBtn     = document.getElementById('addDevicesSubmit');
+
+    function updateCount() {
+        const checked = document.querySelectorAll('.add-device-cb:checked').length;
+        if (countSpan) countSpan.textContent = checked;
+        if (submitBtn) submitBtn.disabled = checked === 0;
+    }
+
+    // Buscador
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('.add-device-item').forEach(item => {
+                const match = item.dataset.serial.includes(q) || item.dataset.model.includes(q);
+                item.style.display = match ? '' : 'none';
+            });
+        });
+    }
+
+    // Checkbox toggle: mostrar campos extra + contar
+    document.querySelectorAll('.add-device-cb').forEach(cb => {
+        cb.addEventListener('change', function () {
+            const item   = this.closest('.add-device-item');
+            const fields = item.querySelector('.add-extra-fields');
+            if (this.checked) {
+                item.style.background = '#f0fdf4';
+                fields.style.setProperty('display', 'flex', 'important');
+                // Init Tom Select en el staff-selector
+                const sel = fields.querySelector('.add-staff-sel');
+                if (sel && !sel.tomselect) {
+                    new TomSelect(sel, {
+                        placeholder: 'Sin persona',
+                        allowEmptyOption: true,
+                        sortField: { field: 'text', direction: 'asc' },
+                    });
+                }
+            } else {
+                item.style.background = '';
+                fields.style.setProperty('display', 'none', 'important');
+            }
+            updateCount();
+        });
+
+        // Clic en la tarjeta (fuera del checkbox)
+        const item = cb.closest('.add-device-item');
+        item.addEventListener('click', function (e) {
+            if (e.target === cb || e.target.closest('.add-extra-fields')) return;
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event('change'));
         });
     });
 });

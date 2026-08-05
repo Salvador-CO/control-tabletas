@@ -13,6 +13,7 @@ class Staff extends Model
         'full_name',
         'role',        // Cargo "base" en el directorio (referencia, puede cambiar por periodo)
         'location_id', // Sede "base" de la persona
+        'notes',       // Observaciones generales sobre la persona
     ];
 
     /* ── Relationships ── */

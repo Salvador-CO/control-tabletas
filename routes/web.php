@@ -16,6 +16,9 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::resource('devices', DeviceController::class)->only(['index', 'store', 'update']);
 
 // ── Catalogs ─────────────────────────────────────────────────────
+// Import routes BEFORE resource so they don't conflict with {staff} param
+Route::post('staff/import/preview',  [StaffController::class, 'importPreview'])->name('staff.import.preview');
+Route::post('staff/import/confirm',  [StaffController::class, 'importConfirm'])->name('staff.import.confirm');
 Route::resource('staff',     StaffController::class)->only(['index', 'store', 'update', 'destroy']);
 Route::resource('locations', LocationController::class)->only(['index', 'store', 'update', 'destroy']);
 Route::resource('events',    EventController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -30,6 +33,10 @@ Route::post('assignments/items/{item}/toggle-liberation', [AssignmentController:
 // PDF vale de resguardo (Exacer)
 Route::get('assignments/{assignment}/pdf', [AssignmentController::class, 'downloadPdf'])
      ->name('assignments.pdf');
+
+// Agregar más dispositivos a un vale existente
+Route::post('assignments/{assignment}/add-devices', [AssignmentController::class, 'addDevices'])
+     ->name('assignments.add-devices');
 
 // ── Permanent Assignments (Jefes) ─────────────────────────────────
 Route::resource('permanent', PermanentAssignmentController::class)

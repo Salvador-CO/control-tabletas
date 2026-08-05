@@ -95,7 +95,7 @@
         </div>
         <div class="info-item">
             <label>Fecha de Devolución</label>
-            <span>{{ $assignment->end_date?->format('d \d\e F \d\e Y') ?? '—' }}</span>
+            <span>{{ $assignment->end_date?->format('d \d\e F \d\e Y') ?? 'Al terminar el evento (fecha indefinida)' }}</span>
         </div>
         @if($assignment->event)
         <div class="info-item">
@@ -163,7 +163,7 @@
     <p style="font-size:8pt; color:#555; margin-top:.5cm; line-height:1.4;">
         El/La coordinador(a) de la sede se compromete a devolver los dispositivos tecnológicos
         en las mismas condiciones en que fueron recibidos, a más tardar el
-        <strong>{{ $assignment->end_date?->format('d \d\e F \d\e Y') ?? '______________________' }}</strong>.
+        <strong>{{ $assignment->end_date?->format('d \d\e F \d\e Y') ?? 'la conclusión del evento (fecha por definir)' }}</strong>.
         Cualquier daño o pérdida será responsabilidad de quien suscribe este documento.
     </p>
 
