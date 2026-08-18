@@ -63,6 +63,7 @@
                                 <th>No. Serie</th>
                                 <th>Cargador</th>
                                 <th>Estado</th>
+                                <th>Notas</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -93,6 +94,9 @@
                                     <span class="badge-status badge-{{ $device->status }}">
                                         {{ str_replace('_', ' ', ucfirst($device->status)) }}
                                     </span>
+                                </td>
+                                <td>
+                                    <div class="text-muted small">{{ $device->notes }}</div>
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-secondary"
@@ -143,13 +147,13 @@
                     <div class="col-6">
                         <label class="form-label small fw-semibold text-muted">Marca *</label>
                         <input type="text" name="brand" class="form-control @error('brand') is-invalid @enderror"
-                               value="{{ old('brand', 'XIAOMI') }}" required>
+                               value="{{ old('brand', request('brand', 'XIAOMI')) }}" required>
                         @error('brand')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-6">
                         <label class="form-label small fw-semibold text-muted">Modelo *</label>
                         <input type="text" name="model" class="form-control @error('model') is-invalid @enderror"
-                               value="{{ old('model', 'Pad 6') }}" required>
+                               value="{{ old('model', request('model', 'Pad 6')) }}" required>
                         @error('model')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
@@ -157,7 +161,7 @@
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-muted">No. Serie *</label>
                     <input type="text" name="serial_number" class="form-control @error('serial_number') is-invalid @enderror"
-                           value="{{ old('serial_number') }}" placeholder="Ej: SN123456ABC" required>
+                           value="{{ old('serial_number', request('serial_number')) }}" placeholder="Ej: SN123456ABC" required>
                     @error('serial_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 

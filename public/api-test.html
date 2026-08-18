@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API - Control Tabletas</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0f0; min-height: 100vh; padding: 30px 20px; }
+        h1 { text-align: center; font-size: 1.6rem; margin-bottom: 8px; color: #a78bfa; }
+        .subtitle { text-align: center; color: #888; font-size: 0.9rem; margin-bottom: 30px; }
+        .card { background: #1a1a2e; border: 1px solid #2d2d4e; border-radius: 12px; padding: 24px; max-width: 700px; margin: 0 auto 24px auto; }
+        .card h2 { font-size: 1rem; color: #7c3aed; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        .field { margin-bottom: 14px; }
+        label { display: block; font-size: 0.82rem; color: #aaa; margin-bottom: 4px; }
+        input { width: 100%; padding: 9px 12px; background: #12122a; border: 1px solid #333366; border-radius: 8px; color: #e0e0f0; font-size: 0.95rem; outline: none; }
+        input:focus { border-color: #7c3aed; }
+        .url-display { background: #12122a; border: 1px solid #333366; border-radius: 8px; padding: 10px 14px; font-family: monospace; font-size: 0.9rem; color: #7c3aed; word-break: break-all; }
+        .btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
+        .btn:hover { opacity: 0.85; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .result-box { margin-top: 16px; padding: 14px; border-radius: 8px; font-family: monospace; font-size: 0.88rem; white-space: pre-wrap; word-break: break-all; display: none; }
+        .result-success { background: #0d2218; border: 1px solid #16a34a; color: #4ade80; }
+        .result-error { background: #1f0a0a; border: 1px solid #dc2626; color: #f87171; }
+        .result-info { background: #0a0a2a; border: 1px solid #4f46e5; color: #93c5fd; }
+        .tip { background: #0f2027; border-left: 3px solid #0ea5e9; padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 0.85rem; color: #7dd3fc; margin-bottom: 16px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    </style>
+</head>
+<body>
+<h1>?? Test API — Control Tabletas</h1>
+<p class="subtitle">Prueba el endpoint /api/telemetry sin necesidad del app Android</p>
+
+<div class="card">
+    <h2>?? Endpoint</h2>
+    <div class="tip">Este es el unico endpoint del API. Recibe datos POST del app Android.</div>
+    <div class="url-display" id="urlDisplay">https://control-dase.infinityfree.me/api/telemetry</div>
+    <div class="field" style="margin-top:14px;">
+        <label>Base URL (cambia entre local/produccion):</label>
+        <input type="text" id="baseUrl" value="https://control-dase.infinityfree.me" oninput="updateUrl()">
+    </div>
+</div>
+
+<div class="card">
+    <h2>?? Datos de Telemetria (POST)</h2>
+    <div class="tip"><strong>serial_number</strong> es el unico campo requerido. Los demas son opcionales.</div>
+    <div class="field">
+        <label>serial_number * (requerido)</label>
+        <input type="text" id="serial_number" value="TEST-001">
+    </div>
+    <div class="row">
+        <div class="field"><label>battery (0-100)</label><input type="number" id="battery" value="85"></div>
+        <div class="field"><label>device_model</label><input type="text" id="device_model" value="Samsung Tab A8"></div>
+    </div>
+    <div class="row">
+        <div class="field"><label>lat</label><input type="text" id="lat" value="19.4326"></div>
+        <div class="field"><label>lng</label><input type="text" id="lng" value="-99.1332"></div>
+    </div>
+    <div class="row">
+        <div class="field"><label>android_version</label><input type="text" id="android_version" value="13"></div>
+        <div class="field"><label>app_version</label><input type="text" id="app_version" value="1.0.0"></div>
+    </div>
+    <div class="row">
+        <div class="field"><label>wifi_ssid</label><input type="text" id="wifi_ssid" value="RedEmpresa"></div>
+        <div class="field"><label>is_charging</label><input type="text" id="is_charging" value="false"></div>
+    </div>
+    <button class="btn" id="sendBtn" onclick="sendTelemetry()">?? Enviar Telemetria al Servidor</button>
+    <div class="result-box" id="resultBox"></div>
+</div>
+
+<div class="card">
+    <h2>?? Prueba Rapida de Conexion</h2>
+    <div class="tip">Si el serial no esta registrado en BD, responde "unregistered" = API funcionando correctamente.</div>
+    <button class="btn" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);" onclick="quickTest()">? Ping Rapido</button>
+    <div class="result-box" id="quickResultBox"></div>
+</div>
+
+<script>
+function updateUrl() {
+    var base = document.getElementById('baseUrl').value.replace(/\/$/, '');
+    document.getElementById('urlDisplay').textContent = base + '/api/telemetry';
+}
+function getUrl() {
+    return document.getElementById('baseUrl').value.replace(/\/$/, '') + '/api/telemetry';
+}
+function showResult(boxId, status, data) {
+    var box = document.getElementById(boxId);
+    var cls = 'result-success';
+    if (status >= 500) cls = 'result-error';
+    else if (status === 422) cls = 'result-error';
+    else if (status === 404 && data && data.status === 'unregistered') cls = 'result-info';
+    else if (status >= 400) cls = 'result-error';
+    box.className = 'result-box ' + cls;
+    box.style.display = 'block';
+    box.textContent = 'HTTP ' + status + '\n\n' + JSON.stringify(data, null, 2);
+}
+function showNetworkError(boxId, err) {
+    var box = document.getElementById(boxId);
+    box.className = 'result-box result-error';
+    box.style.display = 'block';
+    box.textContent = 'ERROR DE RED\n\nNo se pudo conectar al servidor.\n\nError: ' + err.message + '\n\nPosibles causas:\n  - El servidor esta apagado\n  - Error de CORS\n  - URL incorrecta\n  - Hosting bloquea POST desde navegador';
+}
+async function sendTelemetry() {
+    var btn = document.getElementById('sendBtn');
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    var payload = { serial_number: document.getElementById('serial_number').value };
+    var battery = parseInt(document.getElementById('battery').value);
+    if (!isNaN(battery)) payload.battery = battery;
+    var dm = document.getElementById('device_model').value; if (dm) payload.device_model = dm;
+    var lat = parseFloat(document.getElementById('lat').value); if (!isNaN(lat)) payload.lat = lat;
+    var lng = parseFloat(document.getElementById('lng').value); if (!isNaN(lng)) payload.lng = lng;
+    var av = document.getElementById('android_version').value; if (av) payload.android_version = av;
+    var apv = document.getElementById('app_version').value; if (apv) payload.app_version = apv;
+    var wifi = document.getElementById('wifi_ssid').value; if (wifi) payload.wifi_ssid = wifi;
+    payload.is_charging = document.getElementById('is_charging').value === 'true';
+    try {
+        var res = await fetch(getUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(payload) });
+        var data = await res.json();
+        showResult('resultBox', res.status, data);
+    } catch(err) { showNetworkError('resultBox', err); }
+    btn.disabled = false; btn.textContent = 'Enviar Telemetria al Servidor';
+}
+async function quickTest() {
+    var box = document.getElementById('quickResultBox');
+    box.className = 'result-box result-info'; box.style.display = 'block'; box.textContent = 'Conectando...';
+    try {
+        var res = await fetch(getUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ serial_number: 'TEST-PING-001' }) });
+        var data = await res.json();
+        if (res.status === 404 && data.status === 'unregistered') {
+            box.className = 'result-box result-success';
+            box.textContent = 'API FUNCIONANDO CORRECTAMENTE\n\nEl servidor respondio. El serial no esta en BD (normal).\n\n' + JSON.stringify(data, null, 2);
+        } else { showResult('quickResultBox', res.status, data); }
+    } catch(err) { showNetworkError('quickResultBox', err); }
+}
+</script>
+</body>
+</html>

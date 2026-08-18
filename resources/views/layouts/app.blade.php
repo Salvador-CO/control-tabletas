@@ -217,6 +217,9 @@
         <a href="{{ route('locations.index') }}" class="sidebar-link {{ request()->routeIs('locations.*') ? 'active' : '' }}">
             <i class="bi bi-geo-alt-fill"></i> <span>Sedes</span>
         </a>
+        <a href="{{ route('mdm.index') }}" class="sidebar-link {{ request()->routeIs('mdm.*') ? 'active' : '' }}">
+            <i class="bi bi-phone-vibrate"></i> <span>Telemetría (MDM)</span>
+        </a>
 
         <div class="nav-label mt-2">Operaciones</div>
         <a href="{{ route('events.index') }}" class="sidebar-link {{ request()->routeIs('events.*') ? 'active' : '' }}">

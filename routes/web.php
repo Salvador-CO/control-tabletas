@@ -12,6 +12,16 @@ use App\Http\Controllers\EventController;
 // ── Dashboard ────────────────────────────────────────────────────
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+    // MDM
+    Route::get('/mdm', [App\Http\Controllers\MdmController::class, 'index'])->name('mdm.index');
+    Route::post('/mdm/global-wallpaper', [App\Http\Controllers\MdmController::class, 'setGlobalWallpaper'])->name('mdm.set-global-wallpaper');
+    Route::post('/mdm/device/{device}/command', [App\Http\Controllers\MdmController::class, 'sendCommand'])->name('mdm.send-command');
+    // Mensajes masivos
+    Route::post('/mdm/send-message', [App\Http\Controllers\MdmController::class, 'sendMessage'])->name('mdm.send-message');
+    Route::post('/mdm/clear-message', [App\Http\Controllers\MdmController::class, 'clearMessage'])->name('mdm.clear-message');
+    // Vinculación de serial
+    Route::post('/mdm/device/{device}/link-serial', [App\Http\Controllers\MdmController::class, 'linkSerial'])->name('mdm.link-serial');
+
 // ── Inventory ────────────────────────────────────────────────────
 Route::resource('devices', DeviceController::class)->only(['index', 'store', 'update']);
 

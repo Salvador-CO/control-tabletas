@@ -14,6 +14,7 @@ class Device extends Model
         'brand',
         'model',
         'serial_number',
+        'device_reported_serial',
         'status',
         'is_charged',
         'charger_details',
@@ -45,6 +46,16 @@ class Device extends Model
     public function activePermanentAssignment()
     {
         return $this->hasOne(PermanentAssignment::class)->whereNull('released_date');
+    }
+
+    public function telemetry()
+    {
+        return $this->hasOne(DeviceTelemetry::class);
+    }
+
+    public function commandLogs()
+    {
+        return $this->hasMany(DeviceCommandLog::class)->orderByDesc('sent_at');
     }
 
     /* ── Scopes ── */
